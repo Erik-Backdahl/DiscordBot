@@ -68,6 +68,13 @@ public class Program
         .WithDescription("returns a random manga");
 
         await client.CreateGlobalApplicationCommandAsync(globalcommandGetRandomManga.Build());
+
+        var globalcommandLookUp = new SlashCommandBuilder()
+        .WithName("look-up")
+        .WithDescription("gives info on a manga of your choice")
+        .AddOption("ID", ApplicationCommandOptionType.String, "enter ID of manga", isRequired: false)
+        .AddOption("")
+
     }
     private static async Task SlashCommandHandler(SocketSlashCommand command)
     {

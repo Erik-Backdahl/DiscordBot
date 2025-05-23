@@ -1,3 +1,4 @@
+using Discord;
 using Discord.WebSocket;
 using System;
 using System.Linq;
@@ -37,21 +38,42 @@ public static class Endpoints
 
     internal static async Task HandleGetRandomMangaCommand(SocketSlashCommand command)
     {
-        string randomMangaName = await GetRandomMangaName("https://api.mangadex.org/manga/random?contentRating%5B%5D=safe&contentRating%5B%5D=suggestive&contentRating%5B%5D=erotica&includedTagsMode=AND&excludedTagsMode=OR");
-
-        await command.RespondAsync(randomMangaName);
-    }
-    private static async Task<string> GetRandomMangaName(string URL)
-    {
-        HttpResponseMessage response = await endpointClient.GetAsync(URL);
+        HttpResponseMessage response = await endpointClient.GetAsync("https://api.mangadex.org/manga/random?contentRating%5B%5D=safe&contentRating%5B%5D=suggestive&contentRating%5B%5D=erotica&includedTagsMode=AND&excludedTagsMode=OR");
 
         string responseBody = await response.Content.ReadAsStringAsync();
 
-        using (JsonDocument doc = JsonDocument.Parse(responseBody))
+        JsonDocument doc = JsonDocument.Parse(responseBody);
+
+        JsonElement root = doc.RootElement;
+
+        string mangaName = "Name: ";
+        string mangaTags = "tags: ";
+
+        mangaName += root.GetProperty("data").GetProperty("attributes").GetProperty("title").GetProperty("en").ToString();
+
+        try
         {
-            JsonElement root = doc.RootElement;
-            string mangaName = root.GetProperty("data").GetProperty("attributes").GetProperty("title").GetProperty("en").ToString();
-            return mangaName;
+            for (int i = 0; true; i++)
+            {
+                mangaTags += root.GetProperty("data").GetProperty("attributes").GetProperty("tags")[i].GetProperty("attributes").GetProperty("name").GetProperty("en").ToString() + ", ";
+            }
         }
+        catch
+        {
+            //loop ends when out of index
+        }
+
+        if (mangaTags == "tags: ")
+        {
+            mangaTags = "tags: not found";
+        }
+
+        string mangaInfo = mangaName + "\n" + mangaTags;
+
+        var embedBuilder = new EmbedBuilder()
+        .WithTitle(mangaInfo);
+
+        await command.RespondAsync(embed: embedBuilder.Build());
     }
+
 }
