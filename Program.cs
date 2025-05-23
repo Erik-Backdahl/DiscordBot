@@ -6,6 +6,8 @@ using Discord.WebSocket;
 using Discord.Commands;
 using Discord.Net;
 using Newtonsoft.Json;
+using Microsoft.VisualBasic;
+using System.Linq;
 
 public class Program
 {
@@ -24,69 +26,71 @@ public class Program
         var token = File.ReadAllText(@"C:\Users\Erik\VSC\PROJECTS\DiscordBotTest\token\token.txt");
 
 
-        await client.LoginAsync(TokenType.Bot, token);
-        await client.StartAsync();
+        
 
         client.Ready += Client_Ready;
 
         client.SlashCommandExecuted += SlashCommandHandler;
 
+        await client.LoginAsync(TokenType.Bot, token);
 
-        while (true)
-        {
-
-        }
-
+        await client.StartAsync();
 
         // Block this task until the program is closed.
-        // await Task.Delay(-1);
+        await Task.Delay(-1);
 
 
     }
 
     public static async Task Client_Ready()
     {
-        // Let's build a guild command! We're going to need a guild so lets just put that in a variable.
-        //var guild = client.GetGuild(guildId);
+        var firstGlobalCommand = new SlashCommandBuilder()
+        .WithName("first-global-command")
+        .WithDescription("First Test Command");
+        await client.CreateGlobalApplicationCommandAsync(firstGlobalCommand.Build());
 
-        // Next, lets create our slash command builder. This is like the embed builder but for slash commands.
-        var guildCommand = new SlashCommandBuilder();
+        var globalCommandHelp = new SlashCommandBuilder()
+        .WithName("help")
+        .WithDescription("displays all commands and how to use them")
+        .AddOption("specific-command", ApplicationCommandOptionType.String, "OPTIONAL displays a more advanced description of a commmand", isRequired: false);
 
-        // Note: Names have to be all lowercase and match the regular expression ^[\w-]{3,32}$
-        guildCommand.WithName("first-command");
+        await client.CreateGlobalApplicationCommandAsync(globalCommandHelp.Build());
 
-        // Descriptions can have a max length of 100.
-        guildCommand.WithDescription("This is my first guild slash command!");
+        var globalcommandEcho = new SlashCommandBuilder()
+        .WithName("echo")
+        .WithDescription("repeates your input back")
+        .AddOption("message", ApplicationCommandOptionType.String, "input the message you want repeated", isRequired: true, minLength: 1, maxLength: 500);
 
-        // Let's do our global command
-        var globalCommand = new SlashCommandBuilder();
-        globalCommand.WithName("first-global-command");
-        globalCommand.WithDescription("This is my first global slash command");
+        await client.CreateGlobalApplicationCommandAsync(globalcommandEcho.Build());
 
-        try
-        {
-            // Now that we have our builder, we can call the CreateApplicationCommandAsync method to make our slash command.
-            //await guild.CreateApplicationCommandAsync(guildCommand.Build());
+        var globalcommandGetRandomManga = new SlashCommandBuilder()
+        .WithName("random-manga")
+        .WithDescription("returns a random manga");
 
-            // With global commands we don't need the guild.
-            await client.CreateGlobalApplicationCommandAsync(globalCommand.Build());
-            // Using the ready event is a simple implementation for the sake of the example. Suitable for testing and development.
-            // For a production bot, it is recommended to only run the CreateGlobalApplicationCommandAsync() once for each command.
-        }
-        catch (HttpException exception)
-        {
-            // If our command was invalid, we should catch an ApplicationCommandException. This exception contains the path of the error as well as the error message. You can serialize the Error field in the exception to get a visual of where your error is.
-            var json = JsonConvert.SerializeObject(exception.Errors, Formatting.Indented);
-
-            // You can send this error somewhere or just print it to the console, for this example we're just going to print it.
-            Console.WriteLine(json);
-        }
+        await client.CreateGlobalApplicationCommandAsync(globalcommandGetRandomManga.Build());
     }
     private static async Task SlashCommandHandler(SocketSlashCommand command)
     {
-        await command.RespondAsync($"You executed {command.Data.Name}");
-    }
+        switch (command.Data.Name)
+        {
+            case "first-global-command":
+                await Endpoints.HandleFirstGlobalCommand(command);
+                break;
+            case "help":
+                await Endpoints.HandleHelpCommand(command);
+                break;
+            case "echo":
+                await Endpoints.HandleEchoCommand(command);
+                break;
+            case "random-manga":
+                await Endpoints.HandleGetRandomMangaCommand(command);
+                break;
+            default:
+                await command.RespondAsync("error finding command");
+                break;
+        }
 
+    }
     private static Task Log(LogMessage msg)
     {
         Console.WriteLine(msg.ToString());

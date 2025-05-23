@@ -1,0 +1,57 @@
+using Discord.WebSocket;
+using System;
+using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+
+public static class Endpoints
+{
+    static HttpClient endpointClient = new HttpClient();
+
+    static Endpoints()
+    {
+        endpointClient.DefaultRequestHeaders.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36");
+    }
+    public static async Task HandleEchoCommand(SocketSlashCommand command)
+    {
+        var messageOption = command.Data.Options.First(option => option.Name == "message");
+        var response = messageOption.Value.ToString();
+        await command.RespondAsync(response);
+
+    }
+    public static async Task HandleFirstGlobalCommand(SocketSlashCommand command)
+    {
+        var response = command.Data.ToString();
+        await command.RespondAsync(response);
+    }
+
+    public static async Task HandleHelpCommand(SocketSlashCommand command)
+    {
+        //var embedBuilder = new EmbedBuilder();
+        //embedBuilder.WithAuthor("Help Command");
+
+        await command.RespondAsync("ASDAWDAWWD");
+    }
+
+    internal static async Task HandleGetRandomMangaCommand(SocketSlashCommand command)
+    {
+        string randomMangaName = await GetRandomMangaName("https://api.mangadex.org/manga/random?contentRating%5B%5D=safe&contentRating%5B%5D=suggestive&contentRating%5B%5D=erotica&includedTagsMode=AND&excludedTagsMode=OR");
+
+        await command.RespondAsync(randomMangaName);
+    }
+    private static async Task<string> GetRandomMangaName(string URL)
+    {
+        HttpResponseMessage response = await endpointClient.GetAsync(URL);
+
+        string responseBody = await response.Content.ReadAsStringAsync();
+
+        using (JsonDocument doc = JsonDocument.Parse(responseBody))
+        {
+            JsonElement root = doc.RootElement;
+            string mangaName = root.GetProperty("data").GetProperty("attributes").GetProperty("title").GetProperty("en").ToString();
+            return mangaName;
+        }
+    }
+}
