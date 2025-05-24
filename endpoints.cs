@@ -76,4 +76,21 @@ public static class Endpoints
         await command.RespondAsync(embed: embedBuilder.Build());
     }
 
+    public static async Task HandleLookUpCommand(SocketSlashCommand command) //80644606-4b0b-4f17-b477-9d482ea3a3da
+    {
+        var commmandID = command.Data.Options.First(option => option.Name == "id");
+        string ID = commmandID.Value.ToString();
+
+        HttpResponseMessage response = await endpointClient.GetAsync($"https://api.mangadex.org/manga/{ID}?includes%5B%5D=manga");
+
+        string responseBody = await response.Content.ReadAsStringAsync();
+
+        using JsonDocument doc = JsonDocument.Parse(responseBody);
+
+        JsonElement root = doc.RootElement;
+
+        string mangaLastUpdate = root.GetProperty("data").GetProperty("attributes").GetProperty("updatedAt").ToString();
+
+        await command.RespondAsync(mangaLastUpdate);
+    }
 }

@@ -71,10 +71,10 @@ public class Program
 
         var globalcommandLookUp = new SlashCommandBuilder()
         .WithName("look-up")
-        .WithDescription("gives info on a manga of your choice")
-        .AddOption("ID", ApplicationCommandOptionType.String, "enter ID of manga", isRequired: false)
-        .AddOption("")
+        .WithDescription("gives info on a manga of your choice loop with : placeholder or use mangadex.org to find id")
+        .AddOption("id", ApplicationCommandOptionType.String, "enter id of manga", isRequired: false);
 
+        await client.CreateGlobalApplicationCommandAsync(globalcommandLookUp.Build());
     }
     private static async Task SlashCommandHandler(SocketSlashCommand command)
     {
@@ -92,8 +92,11 @@ public class Program
             case "random-manga":
                 await Endpoints.HandleGetRandomMangaCommand(command);
                 break;
+            case "look-up":
+                await Endpoints.HandleLookUpCommand(command);
+                break;
             default:
-                await command.RespondAsync("error finding command");
+                await command.RespondAsync("error finding command THIS SHOULD NEVER HAPPEN");
                 break;
         }
 
